@@ -1,0 +1,46 @@
+pipeline {
+
+    agent any
+
+    tools {
+        maven 'maven-3.8.6'
+    }
+
+    stages {
+        stage ('init') {
+            steps {
+                script {
+                    echo 'initializing scripts'
+                    //gv = load "script.groovy"
+                }
+            }
+        }
+
+        stage ('get ansible key') {
+            steps {
+                script {
+                    echo 'get ansible key from aws'
+                    aws get-credentials - >> ssh_key/ansible-key
+                }
+            }
+        }
+
+        stage ('ansible run playbook') {
+            steps {
+                script {
+                    echo 'running ansible playbook'
+                    ansible-playbook -i inventory/payments/hosts tomcat-deploy.yml
+                }
+            }
+        }
+
+        stage ('delete ansible key') {
+            steps {
+                script {
+                    echo 'get ansible key from aws'
+                    sudo rm -rf ssh_key/ansible-key
+                }
+            }
+        }
+    }
+}

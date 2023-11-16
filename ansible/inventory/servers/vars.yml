@@ -1,0 +1,3 @@
+tomcat_pkg_link: https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.82/bin/apache-tomcat-9.0.82.tar.gz
+tomcat_user: tomcat
+tomcat_group: tomcat

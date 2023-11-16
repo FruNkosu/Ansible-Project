@@ -1,0 +1,8 @@
+[payments-dev]
+payments-dev-ubuntu ansible_host=157.230.213.88
+
+
+[all:vars]
+ansible_user = root
+ansible_ssh_private_key_file = ssh_key/id_rsa
+ansible_python_interpreter=/usr/bin/python3

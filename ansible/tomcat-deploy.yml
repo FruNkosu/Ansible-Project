@@ -1,0 +1,126 @@
+---
+
+# - name: Install Java 17 on ubuntu
+#   hosts: ubuntu
+#   vars:
+#     - JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+#   tasks:
+#     - name: update apt repo
+#       apt:
+#         update_cache: yes
+#         cache_valid_time: 3600
+#         force_apt_get: yes
+#         state: present
+#     - name: install java 17, wget
+#       apt:
+#         pkg:
+#           - wget
+#           - openjdk-17-jdk
+#       register: results
+#     - debug: msg={{results}}
+#     - name: Provide tomcat.service file to /etc/systemd/system/
+#       template:
+#         src: templates/tomcat.service.j2
+#         dest: /etc/systemd/system/tomcat.service
+
+# - name: Install java 17 on centos using a script
+#   hosts: centos
+#   vars:
+#     - JAVA_HOME: /usr/lib/jvm/jdk-17-oracle-x64
+#   tasks:
+#     - name: update yum repo
+#       yum:
+#         update_cache: yes
+#         state: latest
+#     - name: Copy script from local to remote server
+#       copy:
+#         src: scripts/java_script.sh
+#         dest: /tmp/
+#         mode: '+x'
+#     - name: Execute the script
+#       ansible.builtin.shell: /tmp/java_script.sh
+#       register: results
+#     - ansible.builtin.debug: msg={{results}}
+#     - name: Ensure script is removed after execution
+#       file:
+#         path: /tmp/java_script.sh
+#         state: absent
+#     - name: Provide tomcat.service file to /etc/systemd/system/
+#       template:
+#         src: templates/tomcat.service.j2
+#         dest: /etc/systemd/system/tomcat.service
+
+- name: Install Tomcat on servers
+  hosts: servers
+  # vars:
+  #   - tomcat_pkg_link: https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.82/bin/apache-tomcat-9.0.82.tar.gz
+  vars_files:
+    - inventory/servers/vars.yml
+  tasks:
+    - name: Create tomcat group
+      group:
+        name: "{{ tomcat_user }}"
+        state: present
+        gid: 1050
+    - name: Create tomcat user
+      user:
+        name: tomcat
+        shell: /bin/bash
+        home: /home/{{ tomcat_user }}
+        uid: 1050
+        group: "{{ tomcat_group }}"
+
+    - name: Create tomcat directory
+      file:
+        path: /opt/tomcat
+        state: directory
+        owner: "{{ tomcat_user }}"
+        group: "{{ tomcat_group }}"
+        mode: 0764
+
+    - name: Download tomcat package
+      get_url:
+        url: "{{ tomcat_pkg_link }}"
+        dest: /opt/tomcat
+      register: results
+    - debug: msg={{results}}
+
+    - name: Extract tomcat 9 files
+      unarchive:
+        src: /opt/tomcat/apache-tomcat-9.0.82.tar.gz
+        dest: /opt/{{ tomcat_user }}
+        owner: tomcat
+        group: tomcat
+        remote_src: yes
+    - name: Create a symbolic link
+      file:
+        src: /opt/tomcat/apache-tomcat-9.0.82
+        dest: /opt/tomcat/latest
+        owner: tomcat
+        group: tomcat
+        state: link
+    - name: Ensure tomcat scripts are executable
+      shell: |
+        chmod +x /opt/tomcat/latest/bin/*.sh
+    - name: Start tomcat server
+      shell: |
+        systemctl daemon-reload
+        sleep 1
+        systemctl enable --now tomcat
+        sleep 1
+        systemctl status tomcat
+        sleep 1
+        systemctl start tomcat
+        sleep 2
+        ps aux | grep tomcat
+      register: results
+    - debug: msg={{results}}
+
+    
+    
+
+    
+
+
+
+
